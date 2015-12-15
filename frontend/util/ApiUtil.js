@@ -9,9 +9,20 @@ ApiUtil = {
       data: bounds,
       success: ApiActions.receiveAll
     })
+  },
+
+  createBench: function(bench) {
+    console.log("createBench");
+    // debugger
+    $.ajax({
+      type: "POST",
+      url: "api/benches",
+      data: bench,
+      success: function (resp) {
+        console.log(resp);
+      }
+    })
   }
 }
-
-// window.ApiUtil = ApiUtil;
 
 module.exports = ApiUtil;

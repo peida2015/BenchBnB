@@ -2,8 +2,14 @@ var React = require('react');
 var ReactDOM = require('react-dom');
 var BenchStore = require('../stores/bench');
 var ApiUtil = require('../util/ApiUtil');
+// var History = require('react-router').History;
+
+
+var _markers = [];
 
 var Map = React.createClass({
+
+  // mixins: [History],
 
   componentDidMount: function () {
     var map = ReactDOM.findDOMNode(this.refs.map);
@@ -12,21 +18,52 @@ var Map = React.createClass({
       zoom: 13
     }
     this.map = new google.maps.Map(map, mapOptions);
+    BenchStore.addListener(this._updateMarkers);
     this.listenForMove();
+    google.maps.event.addListener(this.map, 'click', this.handleClick);
   },
 
-  fetchFresh: function () {
-    this.map.
+  // componentWillUnmount: function () {
+  //   BenchStore.removeListener(this._updateMarkers);
+  // },
+
+  handleClick: function (e) {
+    // this.history.pushState(null, 'benches/new',);
+
+    this.props.mapClickHandler(e);
+  },
+
+  removeMarker: function (marker) {
+    var marker_idx = _markers.indexOf(marker);
+    if (marker_idx !== -1) {
+      marker.setMap(null);
+    }
+  },
+
+  removeAllBenches: function () {
+    var that = this;
+    _markers.forEach(function (marker) {
+      that.removeMarker(marker);
+    });
+    this._markers = [];
+  },
+
+  deleteMarker: function (marker) {
+    var marker_idx = _markers.indexOf(marker);
+    if (marker_idx !== -1) {
+      _markers.splice(marker_idx, 1);
+    }
   },
 
   addBench: function (bench) {
     console.log("addBench");
     var pos = new google.maps.LatLng(bench.lat, bench.lng);
 
-    marker = new google.maps.Marker({
+    var marker = new google.maps.Marker({
       position: pos,
       map: this.map
-    })
+    });
+    _markers.push(marker);
   },
 
   listenForMove: function () {
@@ -43,17 +80,12 @@ var Map = React.createClass({
       };
 
       ApiUtil.fetchBenches(bounds);
-      // BenchStore.all().forEach(function (bench) {
-      //   // console.log(bench);
-      //   if (that.isInbound(bench, that.map.getBounds())) {
-      //     that.addBench(bench);
-      //   }
-      // });
-      that._updateMarkers();
+      // that._updateMarkers();
     })
   },
 
   _updateMarkers: function () {
+    this.removeAllBenches();
     var that = this;
     BenchStore.all().forEach(function (bench) {
       that.addBench(bench);
